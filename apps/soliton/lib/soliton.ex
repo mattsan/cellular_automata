@@ -8,6 +8,8 @@ defmodule Soliton do
   - https://www.cs.princeton.edu/~ken/soliton-like86.pdf
   """
 
+  import Integer, only: [is_even: 1]
+
   @typedoc "State of cells."
   @type state :: 0 | 1
 
@@ -20,41 +22,23 @@ defmodule Soliton do
   """
   @spec run([state()], pos_integer(), pos_integer()) :: [[state()]]
   def run(seed, generation, r \\ 3) do
-    seed
-    |> Stream.unfold(&{&1, develop(&1, r)})
-    |> Enum.take(generation)
-  end
+    width = length(seed)
 
-  @spec develop([state()], pos_integer()) :: [state()]
-  defp develop(list, r)
+    1..(width * (generation - 1))
+    |> Enum.reduce(Enum.reverse(seed), fn _, line ->
+      ps = line |> Enum.drop(width - r - 1) |> Enum.take(r + 1)
+      cs = line |> Enum.take(r)
 
-  defp develop(list, r) do
-    develop([], list, r)
-  end
+      next_cell =
+        case Enum.sum(ps) + Enum.sum(cs) do
+          0 -> 0
+          i when is_even(i) -> 1
+          _ -> 0
+        end
 
-  @spec develop([state()], [state()], pos_integer()) :: [state()]
-  defp develop(left, right, r)
-
-  defp develop(left, [], _) do
-    left
+      [next_cell | line]
+    end)
     |> Enum.reverse()
-  end
-
-  defp develop(left, [c0 | right], r) do
-    c1 = f(Enum.take(left, r) ++ [c0] ++ Enum.take(right, r))
-
-    develop([c1 | left], right, r)
-  end
-
-  @spec f([state()]) :: state()
-  defp f(list) do
-    import Integer, only: [is_even: 1]
-
-    list
-    |> Enum.sum()
-    |> case do
-      i when i > 0 and is_even(i) -> 1
-      _ -> 0
-    end
+    |> Enum.chunk_every(width)
   end
 end
